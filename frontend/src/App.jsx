@@ -8,7 +8,7 @@ export const UserContext = createContext({})
 
 const App = () => {
 
-    const [userAuth, setUserAuth] = useState();
+    const [userAuth, setUserAuth] = useState({access_token:null});
 
     useEffect(() => {
 

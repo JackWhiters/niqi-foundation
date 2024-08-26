@@ -56,7 +56,7 @@ const UserAuthForm = ({ type }) => {
             }
         }
         
-        if(email.length){
+        if(!email.length){
             return toast.error("Enter Email")
         }
 
