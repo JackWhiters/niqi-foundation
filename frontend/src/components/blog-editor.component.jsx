@@ -33,6 +33,8 @@ const BlogEditor = () => {
 
     const handleBannerUpload = (e) => {
         let img = e.target.files[0];
+
+        // console.log(img);
         
         if(img){
 
@@ -178,7 +180,7 @@ const BlogEditor = () => {
 
 
                         <div className="relative aspect-video hover:opacity-80 bg-white border-4 border-grey">
-                            <label htmlFor="uuploadBanner">
+                            <label htmlFor="uploadBanner">
                                 <img
                                     src={banner} 
                                     className="z-20"
