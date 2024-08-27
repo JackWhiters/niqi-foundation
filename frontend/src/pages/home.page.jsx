@@ -1,6 +1,7 @@
 import AnimationWrapper from "../common/page-animation";
 import InPageNavigation from "../components/inpage-navigation.component";
 
+
 const HomePage = () => {
     return (
         <AnimationWrapper>
