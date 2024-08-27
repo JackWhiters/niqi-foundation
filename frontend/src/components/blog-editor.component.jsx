@@ -1,3 +1,4 @@
+
 import { Link, useNavigate } from "react-router-dom";
 import logo from "../imgs/logo-niqi.png";
 import AnimationWrapper from "../common/page-animation";
