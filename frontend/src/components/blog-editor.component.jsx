@@ -1,5 +1,5 @@
 import { Link } from "react-router-dom";
-import logo from "../imgs/logo.png";
+import logo from "../imgs/logo-niqi.png";
 import AnimationWrapper from "../common/page-animation";
 import defaultBanner from "../imgs/blog banner.png";
 import { uploadImage } from "../common/aws";
@@ -19,7 +19,7 @@ const BlogEditor = () => {
             holderId: "textEditor",
             data: content,
             tools: tools,
-            placeholder: "Lets write an awesome story"
+            placeholder: "Tuliskan isi artikel disini."
         }))
     }, [])
 
@@ -138,7 +138,7 @@ const BlogEditor = () => {
 
                         <textarea 
                             defaultValue={title}
-                            placeholder="Blog Title" 
+                            placeholder="Judul Artikel" 
                             className="text-4xl font-medium w-full h-20 outline-none resize-none mt-10 leading-tight placeholder:opacity-40"
                             onKeyDown={handleTitleKeyDown}
                             onChange={handleTitleChange}

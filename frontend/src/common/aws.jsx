@@ -19,6 +19,6 @@ export const uploadImage = async (img) => {
 
     } )
 
-    return imageUrl;
+    return imgUrl;
 
 }
