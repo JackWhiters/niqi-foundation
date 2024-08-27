@@ -1,5 +1,5 @@
 import { Link, Outlet } from "react-router-dom";
-import logo from "../imgs/logo.png";
+import logo from "../imgs/logo-niqi.png";
 import { useContext, useState } from "react";
 import { UserContext } from "../App";
 import UserNavigationPanel from "./user-navigation.component";
@@ -10,7 +10,7 @@ const Navbar = () => {
     const [searchBoxVisibility, setSearchBoxVisibility] = useState(false)
     const [ userNavPanel, setUserNavPanel ] = useState(false)
 
-    const { userAuth, userAuth: { access_key, profile_img } } = useContext(UserContext);
+    const { userAuth, userAuth: { access_token, profile_img } } = useContext(UserContext);
 
     const handleUserNavPanel = () => {
         setUserNavPanel(currentVal => !currentVal);
@@ -42,7 +42,7 @@ const Navbar = () => {
 
                     <Link to="/editor" className="hidden md:flex gap-2 link">
                         <i class="fi fi-rr-file-edit"></i>
-                        <p>Write</p>
+                        <p>Tulis Artikel</p>
                     </Link>
 
                     {
@@ -69,11 +69,11 @@ const Navbar = () => {
                         :
                         <>
                             <Link className="btn-dark py-2" to="/signin">
-                                Sign In
+                                Masuk
                             </Link>
 
                             <Link className="btn-light py-2 hidden md:block" to="/signup">
-                                Sign Up
+                                Daftar
                             </Link>
                         </>
                     }
