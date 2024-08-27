@@ -9,6 +9,7 @@ import BlogPostCard from "../components/blog-post.component";
 const HomePage = () => {
 
     let [ blogs, setBlog ] = useState(null);
+    let [ trendingBlogs, setTrendingBlog ] = useState(null);
 
     const fetchLatestBlogs = () => {
         axios.get(import.meta.env.VITE_SERVER_DOMAIN + "/latest-blogs")
@@ -19,9 +20,20 @@ const HomePage = () => {
             console.log(err);
         })
     }
+
+    const fetchTrendingBlogs = () => {
+        axios.get(import.meta.env.VITE_SERVER_DOMAIN + "/trending-blogs")
+        .then(({ data }) => {
+            setTrendingBlog(data.blogs);
+        })
+        .catch(err => {
+            console.log(err);
+        })
+    }
     
     useEffect(() => {
         fetchLatestBlogs();
+        fetchTrendingBlogs();
     }, [])
 
     return (
@@ -45,7 +57,17 @@ const HomePage = () => {
                             }
                         </>
                         
-                        <h1>Trending Artikel Disini</h1>
+                        {
+                            // trendingBlogs
+                            trendingBlogs == null ? <Loader /> :
+                                // <h1>tidak ada artikel</h1>
+                                trendingBlogs.map((blog, i) => {
+                                    return <AnimationWrapper transition={{ duration: 1, delay: i*.1 }} key={i}>
+                                        <MinimalBlogPost />
+                                    </AnimationWrapper>
+                                    // return <h1 key={i}>{ blog.title }</h1>
+                                })
+                        }
                         
                     </InPageNavigation>
 
