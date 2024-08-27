@@ -5,7 +5,6 @@ import bcrypt from 'bcrypt';
 import { nanoid } from 'nanoid';
 import jwt from 'jsonwebtoken';
 import cors from 'cors';
-
 import admin from 'firebase-admin';
 import serviceAccountKey from "./niqi-foundation-firebase-adminsdk-e4zaf-700f672b98.json" assert{ type:"json" }
 import {getAuth} from 'firebase-admin/auth'
@@ -18,7 +17,6 @@ import Blog from './Schema/Blog.js';
 
 const server = express();
 let PORT = 3000;
-
 
 admin.initializeApp({
     credential:admin.credential.cert(serviceAccountKey)
@@ -33,7 +31,6 @@ server.use(cors())
 mongoose.connect(process.env.DB_LOCATION,{
     autoIndex: true
 })
-
 
 // setting up s3 bucket
 const s3 = new aws.S3({
