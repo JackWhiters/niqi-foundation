@@ -12,6 +12,7 @@ import aws from "aws-sdk";
 
 
 import User from './Schema/User.js';
+import Blog from './Schema/Blog.js';
 
 
 const server = express();
@@ -51,6 +52,24 @@ const generateUploadURL = async () => {
         ContentType:"image/jpeg"
     })
 }
+
+const verifyJWT = (req, res, next) => {
+    const authHeader = req.headers['authorization'];
+    const token = authHeader && authHeader.split(" ")[1];
+
+    if(token == null){
+        return res.status(401).json({"error":"Tidak ada Access Token"})
+    }
+    jwt.verify(token, process.env.SECRET_ACCESS_KEY, (err,user) => {
+        if(err){
+            return res.status(403).json({error:"Access Token Salah/Tidak Sah"})
+        }
+
+        req.user = user.id
+        next()
+    })
+}
+
 const formatDatatoSend = (user) => {
 
     const access_token = jwt.sign({id: user._id},process.env.SECRET_ACCESS_KEY)
@@ -195,6 +214,65 @@ server.post("/google-auth", async (req,res) => {
     .catch(err => {
         return res.status(500).json({"error":"Gagal authentikasi. Coba dengan akun google lain"})
     })
+})
+
+server.post('/create-blog', verifyJWT, (req, res) => {
+
+    // console.log(req.body)
+    // return res.json(req.body)
+
+    let authorId = req.user;
+    let { title, des, banner, tags, content, draft } = req.body;
+
+    if(!title.length){
+        return res.status(403).json({error:"Kamu harus memasukan title/judul"});
+    }
+
+    if(!draft){
+        if(!des.length || des.length > 200){
+            return res.status(403).json({error:"Kamu harus mengisi deskripsi blog dibawah 200 karakter"});
+        }
+    
+        if(!banner.length){
+            return res.status(403).json({ error:"Kamu harus mengisi blog banner untuk mempublish"})
+        }
+    
+        if(!content.blocks.length) {
+            return res.status(403).json({error:"harus ada beberapa konten blog untuk mempublikasikannya"})
+        }
+        
+        if(!tags.length || tags.length > 10){
+            return res.status(403).json({error:"Masukan urutan tags untuk mempublish, maksimal 10"})
+        }
+    
+    }
+    
+
+    tags = tags.map(tag => tag.toLowerCase());
+
+    let blog_id = title.replace(/[^a-zA-Z0-9]/g,' ').replace(/\s+/g,"-").trim() + nanoid();
+    // console.log(blog_id);
+
+    let blog = new Blog({
+        title,des,banner,content,tags,author:authorId,blog_id,draft: Boolean(draft)
+    })
+
+    blog.save().then(blog => {
+        let incrementVal = draft ? 0 : 1;
+
+        User.findOneAndUpdate({_id:authorId,}, { $inc : {"account_info.total_posts": incrementVal},$push:{"_blogs":blog_id}})
+        .then(user=> {
+            return res.status(200).json({id:blog.blog_id})
+        })
+        .catch(err => {
+            return res.status(500).json({error:"Gagal mengupdate nomor total posts"})
+        })
+    })
+    .catch(err=> {
+        return res.status(500).json({error:err.message})
+    })
+
+    // return res.json({status:"done"})
 })
 
 server.listen(PORT,() => {
