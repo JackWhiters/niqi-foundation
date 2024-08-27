@@ -4,6 +4,7 @@ import InPageNavigation from "../components/inpage-navigation.component";
 import { useEffect, useState } from "react";
 import Loader from "../components/loader.component";
 
+
 const HomePage = () => {
 
     let [ blogs, setBlog ] = useState(null);
