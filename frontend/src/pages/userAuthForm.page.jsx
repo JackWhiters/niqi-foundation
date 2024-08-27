@@ -1,3 +1,5 @@
+
+
 import { useContext, useRef } from "react";
 import AnimationWrapper from "../common/page-animation";
 import InputBox from "../components/input.component";
@@ -7,6 +9,7 @@ import { Toaster, toast } from "react-hot-toast";
 import axios from "axios";
 import { storeInSession } from "../common/session";
 import { UserContext } from "../App";
+import { authWithGoogle } from "../common/firebase";
 
 const UserAuthForm = ({ type }) => {
 
@@ -15,7 +18,7 @@ const UserAuthForm = ({ type }) => {
 
     // console.log(access_token);
 
-    const userAuthTroughServer = (serverRoute, formData) => {
+    const userAuthThroughServer = (serverRoute, formData) => {
 
         axios.post(import.meta.env.VITE_SERVER_DOMAIN + serverRoute, formData)
         .then(({ data }) => {
@@ -68,8 +71,26 @@ const UserAuthForm = ({ type }) => {
             return toast.error("Password should be 6 to 20 characters long with a numeric, 1 lowercase and 1 uppercase")
         }
 
-        userAuthTroughServer(serverRoute, formData)
+        userAuthThroughServer(serverRoute, formData)
 
+    }
+
+    const handleGoogleAuth = (e) => {
+        e.preventDefault();
+
+        authWithGoogle().then(user => {
+            // console.log(user);
+            let serverRoute = "/google-auth";
+            let formData = {
+                access_token:user.accessToken
+            }
+
+            userAuthThroughServer(serverRoute, formData)
+        })
+        .catch(err=>{
+            toast.error('trouble login through')
+            return console.log(err)
+        })
     }
 
     return (
@@ -124,7 +145,7 @@ const UserAuthForm = ({ type }) => {
                         <hr className="w-1/2 border-black" />
                     </div>
 
-                    <button className="btn-dark flex items-center justify-center gap-4 w-[90%] center">
+                    <button className="btn-dark flex items-center justify-center gap-4 w-[90%] center " onClick={handleGoogleAuth}>
                         <img src={googleIcon} className="w-5" />
                         Continue with Google
                     </button>

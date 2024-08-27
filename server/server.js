@@ -5,12 +5,19 @@ import bcrypt from 'bcrypt';
 import { nanoid } from 'nanoid';
 import jwt from 'jsonwebtoken';
 import cors from 'cors';
+import admin from 'firebase-admin';
+import serviceAccountKey from "./niqi-foundation-firebase-adminsdk-e4zaf-700f672b98.json" assert{ type:"json" }
+import {getAuth} from 'firebase-admin/auth'
 
 import User from './Schema/User.js';
 
 
 const server = express();
 let PORT = 3000;
+
+admin.initializeApp({
+    credential:admin.credential.cert(serviceAccountKey)
+})
 
 let emailRegex = /^\w+([\.-]?\w+)*@\w+([\.-]?\w+)*(\.\w{2,3})+$/; // regex for email
 let passwordRegex = /^(?=.*\d)(?=.*[a-z])(?=.*[A-Z]).{6,20}$/; // regex for password
@@ -117,6 +124,46 @@ server.post("/signin",(req,res) => {
         return res.status(500).json({"error":err.message})
     })
 
+})
+
+server.post("/google-auth", async (req,res) => {
+    let {access_token} = req.body;
+    getAuth()
+    .verifyIdToken(access_token)
+    .then(async (decodecUser) => {
+        let {email,name,picture} = decodecUser;
+        picture = picture.replace("s96-c","s384-c");
+        let user = await User.findOne({"personal_info.email":email}).select("personal_info.fullname personal_info.username personal_info.profile_image google_auth").then((u) => {
+            return u || null
+        })
+        .catch(err => {
+            return res.status(500).json({"error":err.message})
+        })
+
+        if(user) {
+            if(!user.google_auth){
+                return res.status(403).json("error","Email ini terdafter tanpa google.Tolong login dengan password untuk access account ini")
+            }
+        } else {
+            let username = await generateUsername(email);
+            user = new User({
+                personal_info: { fullname:name, email,profile_image:picture, username},
+                google_auth:true
+            })
+
+            await user.save().then((u) => {
+                user = u;
+            })
+            .catch(err=>{
+                return res.status(500).json({"error":err.message})
+            })
+        }
+
+        return res.status(200).json(formatDatatoSend(user))
+    })
+    .catch(err => {
+        return res.status(500).json({"error":"Gagal authentikasi. Coba dengan akun google lain"})
+    })
 })
 
 server.listen(PORT,() => {
