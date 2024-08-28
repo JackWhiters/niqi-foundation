@@ -33,7 +33,7 @@ const HomePage = () => {
         })
         .catch(err => {
             console.log(err);
-        })
+        });
     }
 
     const fetchBlogsByCategory = ({ page = 1 }) => {
@@ -51,7 +51,7 @@ const HomePage = () => {
         })
         .catch(err => {
             console.log(err);
-        })
+        });
     }
 
     const fetchTrendingBlogs = () => {
@@ -61,7 +61,7 @@ const HomePage = () => {
         })
         .catch(err => {
             console.log(err);
-        })
+        });
     }
 
     const loadBlogByCategory = (e) => {
