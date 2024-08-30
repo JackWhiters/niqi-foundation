@@ -33,4 +33,25 @@
 
 # GET http://localhost:3000/latest-blogs
 
-GET http://localhost:3000/trending-blogs
+# GET http://localhost:3000/trending-blogs
+
+# POST http://localhost:3000/search-blogs 
+# Content-type:application/json
+
+# {
+#     "tag":"tag1"
+# }
+
+# POST http://localhost:3000/search-users
+# Content-type:application/json
+
+# {
+#     "query":"j"
+# }
+
+POST http://localhost:3000/get-profile
+Content-type:application/json
+
+{
+    "username":"junssn4xs"
+}
