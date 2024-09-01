@@ -6,6 +6,7 @@ import Loader from "../components/loader.component";
 import BlogPostCard from "../components/blog-post.component";
 import MinimalBlogPost from "../components/nobanner-blog-post.component";
 import { activeTabRef } from "../components/inpage-navigation.component";
+import NoDataMessage from "../components/nodata.component";
 
 
 const HomePage = () => {
@@ -85,29 +86,34 @@ const HomePage = () => {
                     <InPageNavigation routes={[ pageState , "trending blogs"]} defaultHidden={["trending blogs"]}>
 
                         <>
-                            {
-                                blogs == null ? <Loader /> :
-                                // <h1>tidak ada artikel</h1>
-                                blogs.map((blog, i) => {
-                                    return <AnimationWrapper transition={{ duration: 1, delay: i*.1 }} key={i}>
-                                        <BlogPostCard content={blog} author={blog.author.personal_info} />
-                                    </AnimationWrapper>
-                                    // return <h1 key={i}>{ blog.title }</h1>
-                                })
-                            }
+                            {blogs == null ? ( 
+                                <Loader />
+                            ) : (
+                                blogs.length ?
+                                    blogs.map((blog, i) => {
+                                        return (
+                                            <AnimationWrapper transition={{ duration: 1, delay: i*0.1 }} key={i}>
+                                                <BlogPostCard content={blog} author={blog.author.personal_info} />
+                                            </AnimationWrapper>
+                                        );
+                                    })
+                                : <NoDataMessage message="Tidak ada artikel di publish" />
+                            )}
                         </>
                         
-                        {
-                            // trendingBlogs
-                            trendingBlogs == null ? <Loader /> :
-                                // <h1>tidak ada artikel</h1>
+                        {trendingBlogs == null ? ( 
+                            <Loader /> 
+                        ) : (
+                            trendingBlogs.length ?
                                 trendingBlogs.map((blog, i) => {
-                                    return <AnimationWrapper transition={{ duration: 1, delay: i*.1 }} key={i}>
-                                        <MinimalBlogPost blog={blog} index={i} />
-                                    </AnimationWrapper>
-                                    // return <h1 key={i}>{ blog.title }</h1>
+                                    return (
+                                        <AnimationWrapper transition={{ duration: 1, delay: i*0.1 }} key={i}>
+                                            <MinimalBlogPost blog={blog} index={i} />
+                                        </AnimationWrapper>
+                                    );
                                 })
-                        }
+                            : <NoDataMessage message="Tidak ada artikel trending" />
+                        )}
                         
                     </InPageNavigation>
 
@@ -134,16 +140,19 @@ const HomePage = () => {
                         <div>
                             <h1 className="font-medium text-xl mb-8">Trending <i className="fi fi-rr-arrow-trend-up"></i></h1>
 
-                            {
-                            trendingBlogs == null ? <Loader /> :
-                                // <h1>tidak ada artikel</h1>
-                                trendingBlogs.map((blog, i) => {
-                                    return <AnimationWrapper transition={{ duration: 1, delay: i*.1 }} key={i}>
-                                        <MinimalBlogPost blog={blog} index={i} />
-                                    </AnimationWrapper>
-                                    // return <h1 key={i}>{ blog.title }</h1>
-                                })
-                            }
+                            {trendingBlogs == null ? ( 
+                                <Loader /> 
+                            ) : (
+                                trendingBlogs.length ?
+                                    trendingBlogs.map((blog, i) => {
+                                        return (
+                                            <AnimationWrapper transition={{ duration: 1, delay: i*0.1 }} key={i}>
+                                                <MinimalBlogPost blog={blog} index={i} />
+                                            </AnimationWrapper>
+                                        );
+                                    })
+                                : <NoDataMessage message="Tidak ada artikel trending" />
+                            )}
 
                         </div>
                     </div>
