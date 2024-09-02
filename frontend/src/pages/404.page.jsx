@@ -1,7 +1,8 @@
 import { Link } from "react-router-dom";
-import pageNotFoundImage from "../imgs/404/png";
+import pageNotFoundImage from "../imgs/404.png";
 import fullLogo from "../imgs/full-logo.png";
 
+// Page Not Found
 const PageNotFound = () => {
     return (
         <section className="h-cover relative p-10 flex flex-col items-center gap-20 text-center">

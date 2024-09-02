@@ -1,7 +1,8 @@
 import { Link } from "react-router-dom";
 import { getFullDay } from "../common/date";
+import { getDay } from "../common/date";
 
-const AboutUser = ({ className, bio, social_links, joinedAt }) => {
+const AboutUser = ({ className, bio, social_links, joinedAt }) => { 
     return (
         <div className={"md:w-[90%] md:mt-7 " + className}>
             <p className="text-xl leading-7">{ bio.length ? bio : "Tidak ada apapun disini" }</p>
