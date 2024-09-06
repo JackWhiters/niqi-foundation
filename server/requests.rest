@@ -49,9 +49,17 @@
 #     "query":"j"
 # }
 
-POST http://localhost:3000/get-profile
+# POST http://localhost:3000/get-profile
+# Content-type:application/json
+
+# {
+#     "username":"junssn4xs"
+# }
+
+
+POST http://localhost:3000/get-blog
 Content-type:application/json
 
 {
-    "username":"junssn4xs"
+    "blog_id":"ini-adalah-test-title-NL4Ej3qXBIwhjGogxUxi"
 }
