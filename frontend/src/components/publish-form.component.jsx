@@ -5,12 +5,14 @@ import { EditorContext } from "../pages/editor.pages";
 import Tag from "./tags.component";
 import axios from "axios";
 import { UserContext } from "../App";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useParams } from "react-router-dom";
 
 const PublishForm = () => {
 
     let characterLimit = 200;
     let tagLimit = 10;
+
+    let { blog_id } = useParams();
     
     let { blog, blog: { banner, title, tags, des, content }, setEditorState, setBlog } = useContext(EditorContext);
 
@@ -85,7 +87,7 @@ const PublishForm = () => {
             title, banner, des, content, tags, draft: false
         }
 
-        axios.post(import.meta.env.VITE_SERVER_DOMAIN + "/create-blog", blogObj, {
+        axios.post(import.meta.env.VITE_SERVER_DOMAIN + "/create-blog", { ...blogObj, id: blog_id }, {
             headers: {
                 'Authorization': `Bearer ${access_token}`
             }
@@ -116,8 +118,7 @@ const PublishForm = () => {
             <section className="w-screen min-h-screen grid items-center lg:grid-cols-2 py-16 lg:gap-4">
                 <Toaster />
 
-                <button className="w-12 h-12 absolute right-[5vw] z-10 top-[5%] lg:top-[10%]" onClick={handleCloseEvent}
-                >
+                <button className="w-12 h-12 absolute right-[5vw] z-10 top-[5%] lg:top-[10%]" onClick={handleCloseEvent} >
                     <i className="fi fi-br-cross"></i>
                 </button>
 

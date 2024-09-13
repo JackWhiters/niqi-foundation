@@ -17,19 +17,19 @@
 
 # GET http://localhost:3000/get-upload-url
 
-# POST http://localhost:3000/create-blog
-# Content-Type: application/json
-# Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6IjY2Y2RkYWMwODUyYTFhMjM1MjBjNmU3MCIsImlhdCI6MTcyNDc2NjkxMn0.Kc3FTt7pA4pDjykuPffyn6yrealUiHixc9-eqI4fLRU
+POST http://localhost:3000/create-blog
+Content-Type: application/json
+Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6IjY2Y2RkYWMwODUyYTFhMjM1MjBjNmU3MCIsImlhdCI6MTcyNDc2NjkxMn0.Kc3FTt7pA4pDjykuPffyn6yrealUiHixc9-eqI4fLRU
 
-# {
-#     "title":"ini adalah test titlesdfsdsf",
-#     "banner":"https://example.com/image-url",
-#     "des":"ini deksripsi singkat",
-#     "content": {
-#         "blocks":[1,2]
-#     },
-#     "tags":["tag1","tag2"]
-# }
+{
+    "title":"ini adalah test titlesdfsdsf",
+    "banner":"https://example.com/image-url",
+    "des":"ini deksripsi singkat",
+    "content": {
+        "blocks":[1,2]
+    },
+    "tags":["tag1","tag2"]
+}
 
 # GET http://localhost:3000/latest-blogs
 

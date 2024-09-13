@@ -1,6 +1,7 @@
 import { Link } from "react-router-dom";
 import pageNotFoundImage from "../imgs/404.png";
-import fullLogo from "../imgs/full-logo.png";
+// import fullLogo from "../imgs/full-logo.png";
+import fullLogo from "../imgs/logo-niqi.png";
 
 // Page Not Found
 const PageNotFound = () => {

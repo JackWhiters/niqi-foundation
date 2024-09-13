@@ -348,7 +348,7 @@ server.post('/create-blog', verifyJWT, (req, res) => {
     // return res.json(req.body)
 
     let authorId = req.user;
-    let { title, des, banner, tags, content, draft } = req.body;
+    let { title, des, banner, tags, content, draft, id } = req.body;
 
     if(!title.length){
         return res.status(403).json({error:"Kamu harus memasukan title/judul"});
@@ -438,7 +438,7 @@ server.post("/get-blog",(req,res) => {
         return res.status(500).json({ error:err.message });
     })
 
-    if(blog.draft && !draft) {
+    if(Blog.draft && !draft) {
         return res.status(500).json({ error: 'kamu tidak mengakses draft blogs' })
     }
 })
@@ -447,14 +447,14 @@ server.post("/like-blog",verifyJWT, (req,res) => {
 
     let user_id = req.user;
 
-    let { _id,islikedByUser } = req.body;
+    let { _id,isLikedByUser } = req.body;
 
-    let incrementalVal = !likedByUser ? 1 : -1;
+    let incrementVal = !isLikedByUser ? 1 : -1;
 
     Blog.findOneAndUpdate({ _id },{ $inc:{ "activity.total_likes": incrementVal } })
     .then(blog => {
         
-        if(!islikedByUser) {
+        if(!isLikedByUser) {
             let like = new Notification({
                 type: "like",
                 blog: _id,
@@ -479,14 +479,14 @@ server.post("/like-blog",verifyJWT, (req,res) => {
     })
 })
 
-server.post("/isLiked-by-user",verifyJWT,(req,res) => {
+server.post("/isliked-by-user",verifyJWT,(req,res) => {
     let user_id = req.user;
 
     let { _id } = req.body;
 
     Notification.exists({ user: user_id,type: "like",blog: _id })
     .then(result => {
-        return res.status(200),json({result})
+        return res.status(200).json({result})
     })
     .catch(err => {
         return res.status(500).json({ error:err.message })
@@ -494,18 +494,17 @@ server.post("/isLiked-by-user",verifyJWT,(req,res) => {
 
 })
 
-server.post("/add-comment", verifyJWT,(req,res) => {
+server.post("/add-comment", verifyJWT,(req, res) => {
 
     let user_id = req.user;
-    let { _id,comment,blog_author, replying_to } = req.body;
+    let { _id, comment, blog_author, replying_to } = req.body;
 
     if(!comment.length) {
-        return res.status(403).json({error: 'Tuliskan sesuatu untuk meninggalkan komentar...'});
-
+        return res.status(403).json({ error: 'Tuliskan sesuatu untuk meninggalkan komentar' });
     }
     
     let commentObj = {
-        blog_id:_id,blog_author,comment,commented_by:user_id,
+        blog_id: _id, blog_author, comment, commented_by: user_id,
     }
 
     if(replying_to){
@@ -515,22 +514,22 @@ server.post("/add-comment", verifyJWT,(req,res) => {
 
     new Comment (commentObj).save().then( async commentFile => {
 
-        let { comment,commentedAt,children } = commentFile;
+        let { comment, commentedAt, children } = commentFile;
 
-        Blog.findOneAndUpdate({ _id },{ $push:{ "comments": commentFile.id }, $inc: { "activity.total_comments": 1 ,"activity.total_parent.comments": replying_to ? 0 : 1 }, })
-        .then(blog => { console.log("Komentar Baru Telah Dibuat")});
+        Blog.findOneAndUpdate({ _id }, { $push: { "comments": commentFile._id }, $inc : { "activity.total_comments": 1 ,"activity.total_parent_comments": replying_to ? 0 : 1 }, })
+        .then(blog => { console.log('Komentar Baru Telah Dibuat') });
 
         let notificationObj = {
             type: replying_to ? "reply" : "comment",
-            blog:_id,
-            notification_for:blog_author,
-            user:user_id,
-            comment:commentFile.id
+            blog: _id,
+            notification_for: blog_author,
+            user: user_id,
+            comment: commentFile._id
         }
 
         if(replying_to){
-            notificationObj.replied_on_comment = replying.to;
-            await Comment.findOneAndUpdate({ _id:replying_to },{ $push: { children: commentFile.id } })
+            notificationObj.replied_on_comment = replying_to;
+            await Comment.findOneAndUpdate({ _id:replying_to },{ $push: { children: commentFile._id } })
             .then(replyingToCommentDoc => { notificationObj.notification_for = replyingToCommentDoc.commented_by })
             
         }
@@ -538,7 +537,7 @@ server.post("/add-comment", verifyJWT,(req,res) => {
         new Notification(notificationObj).save().then(notification => console.log('notifikasi baru telah dibuat'));
 
         return res.status(200).json({
-            comment, commentedAt, id:commentFile.id, user_id, children
+            comment, commentedAt, _id: commentFile._id, user_id, children
         })
 
     })
@@ -546,30 +545,30 @@ server.post("/add-comment", verifyJWT,(req,res) => {
 
 })
 
-server.post("/get-blog-comments",(req,res) => {
+server.post("/get-blog-comments", (req, res) => {
 
-    let { blog_id,skip } = req.body;
+    let { blog_id, skip } = req.body;
 
     let maxLimit = 5;
 
-    Comment.find({ Blog_id,isreply:false })
-    .populate("commented","personal_info.username personal_info.fullname personal_info.profile_img")
+    Comment.find({ blog_id, isReply: false })
+    .populate("commented_by", "personal_info.username personal_info.fullname personal_info.profile_img")
     .skip(skip)
     .limit(maxLimit)
     .sort({
-        'commentedAt':-1
+        'commentedAt': -1
     })
     .then(comment => {
         return res.status(200).json(comment);
     })
     .catch(err => {
         console.log(err.message);
-        return res.status(500).json({error:err.message})
+        return res.status(500).json({ error:err.message })
     })
 })
 
-server.post("/get-replies", (req,res) => {
-    let { _id,skip } = req.body;
+server.post("/get-replies", (req, res) => {
+    let { _id, skip } = req.body;
 
     let maxLimit = 5;
 
@@ -600,14 +599,14 @@ const deleteComments = ( _id ) => {
     Comment.findOneAndDelete({ _id })
     .then(comment => {
         if(comment.parent){
-            Comment.findONeAndUpdate({ _id: comment.parent}, { $pull: {children: _id }})
+            Comment.findOneAndUpdate({ _id: comment.parent}, { $pull: {children: _id }})
             .then(data => console.log("komentar di hapus dari parent"))
             .catch(err => console.log(err));
         }
 
         Notification.findOneAndDelete({ comment: _id}).then(notification => console.log('notifikasi komentar dihapus'))
         Notification.findOneAndDelete({ reply: _id }).then(notification => console.log('reply notifikasi dihapus'))
-        Blog.findOneAndUpdate({_id:comment.blog_id},{ $pull: { comments: _id }, $inc:{"activity.total.comments":-1},"activity.total_parent.comments":comment.parent ? 0 : -1 })
+        Blog.findOneAndUpdate({_id:comment.blog_id},{ $pull: { comments: _id }, $inc:{"activity.total_comments":-1},"activity.total_parent_comments":comment.parent ? 0 : -1 })
         .then(blog => {
             if(comment.children.length) {
              comment.children.map(replies => {

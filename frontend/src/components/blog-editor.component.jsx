@@ -1,4 +1,4 @@
-import { Link, useNavigate } from "react-router-dom";
+import { Link, useNavigate, useParams } from "react-router-dom";
 import logo from "../imgs/logo-niqi.png";
 import AnimationWrapper from "../common/page-animation";
 import defaultBanner from "../imgs/blog banner.png";
@@ -16,6 +16,7 @@ const BlogEditor = () => {
     let { blog, blog: { title, banner, content, tags, des }, setBlog, textEditor, setTextEditor, setEditorState } = useContext(EditorContext)
 
     let { userAuth: { access_token } } = useContext(UserContext)
+    let { blog_id } = useParams();
 
     let navigate = useNavigate()
 
@@ -24,7 +25,7 @@ const BlogEditor = () => {
         if(!textEditor.isReady){
             setTextEditor(new EditorJS({
                 holderId: "textEditor",
-                data: content,
+                data: Array.isArray(content) ? content[0] : content,
                 tools: tools,
                 placeholder: "Tuliskan isi artikel disini."
             }))
@@ -125,7 +126,7 @@ const BlogEditor = () => {
                     title, banner, des, content, tags, draft: true
                 }
 
-                axios.post(import.meta.env.VITE_SERVER_DOMAIN + "/create-blog", blogObj, {
+                axios.post(import.meta.env.VITE_SERVER_DOMAIN + "/create-blog", { ...blogObj, id: blog_id }, {
                     headers: {
                         'Authorization': `Bearer ${access_token}`
                     }
