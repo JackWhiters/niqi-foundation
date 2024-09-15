@@ -68,22 +68,22 @@ const CommentCard = ({ index, leftVal, commentData }) => {
 
     }
 
-    const loadReplies = ({ skip = 0 }) => {
+    const loadReplies = ({ skip = 0, currentIndex = index }) => {
 
-        if(children.length){
+        if(commentsArr[currentIndex].children.length){
 
             hideReplies();
 
-            axios.post(import.meta.env.VITE_SERVER_DOMAIN + "/get-replies", { _id, skip })
+            axios.post(import.meta.env.VITE_SERVER_DOMAIN + "/get-replies", { _id: commentsArr[currentIndex]._id, skip })
             .then(({ data: { replies } }) => {
 
-                commentData.isReplyLoaded = true;
+                commentsArr[currentIndex].isReplyLoaded = true;
 
                 for( let i = 0; i < replies.length; i++){
 
-                    replies[i].childrenLevel = commentData.childrenLevel + 1;
+                    replies[i].childrenLevel = commentsArr[currentIndex].childrenLevel + 1;
 
-                    commentsArr.splice(index + 1 + i + skip, 0, replies[i])
+                    commentsArr.splice(currentIndex + 1 + i + skip, 0, replies[i])
 
                 }
 
@@ -134,6 +134,27 @@ const CommentCard = ({ index, leftVal, commentData }) => {
         
     }
 
+    const LoadMoreRepliesButton = () => {
+
+        let parentIndex = getParentIndex();
+
+        let button = <button onClick={() => loadReplies({ skip: index - parentIndex, currentIndex: parentIndex })} className="text-dark-grey p-2 px-3 hover:bg-grey/30 rounded-md flex items-center gap-2">Tampilkan Lebih Balasan</button>;
+
+        if(commentsArr[index + 1]){
+            if(commentsArr[index + 1].childrenLevel < commentsArr[index].childrenLevel){
+                if((index - parentIndex) < commentsArr[parentIndex].children.length){
+                    return button;
+                }
+            }
+        } else {
+            if(parentIndex){
+                if((index - parentIndex) < commentsArr[parentIndex].children.length){
+                    return button;
+                }
+            }
+        }
+    }
+
     return (
         <div className="w-full" style={{ paddingLeft: `${leftVal * 10}px` }}>
             <div className="my-5 p-6 rounded-md border border-grey">
@@ -176,6 +197,9 @@ const CommentCard = ({ index, leftVal, commentData }) => {
                     </div> : ""
                 }
             </div>
+
+            <LoadMoreRepliesButton />
+
         </div>
     )
 }
