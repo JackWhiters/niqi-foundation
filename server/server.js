@@ -342,6 +342,68 @@ server.post("/get-profile",(req,res) => {
     })
 })
 
+server.post("/update-profile-img",verifyJWT,(req,res) => {
+    let { url } = req.body;
+    User.findOneAndUpdate({ _id: req.user }, {"personal_info.profile_img": url})
+    .then(() => {
+        return res.status(200).json({ profile_img: url })
+    })
+    .catch(err => {
+        return res.status(500).json({ error: err.message })
+    })
+})
+
+server.post("/update-profile", verifyJWT,(req,res) => {
+
+    let { username, bio, social_links } = req.body;
+    let bioLimit = 150;
+
+    if(username.length <3) {
+        return res.status(403).json({error:"username harus lebih panjang dari 3 huruf"})
+    }
+
+    if(bio.length > bioLimit) {
+        return res.status(403).json({error:`Bio tidak boleh lebih dari ${bioLimit} karakter`})
+    }
+
+    let socialLinksArr = Object.keys(social_links);
+
+    try {
+        for(let i = 0; i < socialLinksArr.length;i++) {
+            if(social_links[socialLinksArr[i]].length){
+                let hostname = new URL(social_links[socialLinksArr[i]]).hostname;
+                
+                if(!hostname.includes(`${socialLinksArr[i]}.com`) && socialLinksArr[i] != 'website'){
+                    return res.status(403).json({error:`${socialLinksArr[i]} links tidak valid. kamu harus memasukan full link`})
+                }
+            }
+
+        }
+
+    } catch (err) {
+        return res.status(500).json({error:"Kamu harus memasukan social links dengan http(s)"})
+    }
+
+    let UpdateObj = {
+        "personal_info.username": username,
+        "personal_info.bio": bio,
+        social_links
+    }
+
+    User.findOneAndUpdate({ _id:req.user }, UpdateObj,{
+        runvalidators: true
+    })
+    .then(() => {
+        return res.status(200).json({ username })
+    })
+    .catch(err => {
+        if(err.code == 11000) {
+            return res.status(409).json({error:"username telah digunakan"})
+        }
+        return res.status(500).json({ error:err.message })
+    })
+})
+
 server.post('/create-blog', verifyJWT, (req, res) => {
 
     // console.log(req.body)
