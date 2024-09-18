@@ -68,19 +68,21 @@ const verifyJWT = (req, res, next) => {
         }
 
         req.user = user.id
+        req.admin = user.admin
         next()
     })
 }
 
 const formatDatatoSend = (user) => {
 
-    const access_token = jwt.sign({id: user._id},process.env.SECRET_ACCESS_KEY)
+    const access_token = jwt.sign({id: user._id, admin: user.admin },process.env.SECRET_ACCESS_KEY)
 
     return {
         access_token,
         profile_img : user.personal_info.profile_img,
         username:user.personal_info.username,
-        fullname:user.personal_info.fullname
+        fullname:user.personal_info.fullname,
+        isAdmin: user.admin
     }
 }
 
@@ -134,7 +136,7 @@ server.post("/signup",(req,res) => {
         user.save().then((u) => {
             return res.status(200).json(formatDatatoSend(u))
         }).catch(err=>{
-            if(err.code = 110000) {
+            if(err.code == 11000) {
                 return res.status(500).json({"error":"Email Sudah ada"})
             }
             return res.status(500).json({"error":err.message})
@@ -215,6 +217,45 @@ server.post("/google-auth", async (req,res) => {
     })
     .catch(err => {
         return res.status(500).json({"error":"Gagal authentikasi. Coba dengan akun google lain"})
+    })
+})
+
+server.post("/change-password",verifyJWT,(req,res) => {
+    let { currentPassword, newPassword } = req.body;
+    
+    if(!passwordRegex.test(currentPassword) || !passwordRegex.test(newPassword)){
+        return res.status(403).json({error:"Password harus memiliki panjang 6 sampai 20 karakter dengan angka, 1 huruf kecil dan 1 huruf besar"})
+    }
+
+    User.findOne({ _id:req.user})
+    .then((user) => {
+        if(user.google_auth){
+            return res.status(403).json({error:"kamu tidak dapat mengganti password karna login menggunakan google"})
+        }
+
+        bcrypt.compare(currentPassword, user.personal_info.password, (err,result) => {
+            if(err){
+                return res.status(500).json({ error:"terjadi error saat mengganti password, tolong coba lagi nanti" })
+            }
+
+            if(!result){
+                return res.status(403).json({ error:"password lama salah" })
+            }
+
+            bcrypt.hash(newPassword,10,(err, hashed_password) => {
+                User.findOneAndUpdate({ _id: req.user },{"personal_info.password":hashed_password})
+                .then((u) => {
+                    return res.status(200).json({ status:'Password berubah' })
+                })
+                .catch(err => {
+                    return res.status(500).json({error:'terjadi error saat menyinmpan password baru, tolong coba lagi nanti'})
+                })
+            })
+        })
+    })
+    .catch(err => {
+        console.log(err);
+        res.status(500).json({error:"User tidak ditemukan"})
     })
 })
 
@@ -410,68 +451,75 @@ server.post('/create-blog', verifyJWT, (req, res) => {
     // return res.json(req.body)
 
     let authorId = req.user;
-    let { title, des, banner, tags, content, draft, id } = req.body;
+    let isAdmin = req.admin;
 
-    if(!title.length){
-        return res.status(403).json({error:"Kamu harus memasukan title/judul"});
-    }
+    if(isAdmin) {
+        let { title, des, banner, tags, content, draft, id } = req.body;
 
-    if(!draft){
-        if(!des.length || des.length > 200){
-            return res.status(403).json({error:"Kamu harus mengisi deskripsi blog dibawah 200 karakter"});
+        if(!title.length){
+            return res.status(403).json({error:"Kamu harus memasukan title/judul"});
         }
     
-        if(!banner.length){
-            return res.status(403).json({ error:"Kamu harus mengisi blog banner untuk mempublish"})
-        }
-    
-        if(!content.blocks.length) {
-            return res.status(403).json({error:"harus ada beberapa konten blog untuk mempublikasikannya"})
+        if(!draft){
+            if(!des.length || des.length > 200){
+                return res.status(403).json({error:"Kamu harus mengisi deskripsi blog dibawah 200 karakter"});
+            }
+        
+            if(!banner.length){
+                return res.status(403).json({ error:"Kamu harus mengisi blog banner untuk mempublish"})
+            }
+        
+            if(!content.blocks.length) {
+                return res.status(403).json({error:"harus ada beberapa konten blog untuk mempublikasikannya"})
+            }
+            
+            if(!tags.length || tags.length > 10){
+                return res.status(403).json({error:"Masukan urutan tags untuk mempublish, maksimal 10"})
+            }
+        
         }
         
-        if(!tags.length || tags.length > 10){
-            return res.status(403).json({error:"Masukan urutan tags untuk mempublish, maksimal 10"})
-        }
     
-    }
+        tags = tags.map(tag => tag.toLowerCase());
     
-
-    tags = tags.map(tag => tag.toLowerCase());
-
-    let blog_id = id || title.replace(/[^a-zA-Z0-9]/g,' ').replace(/\s+/g,"-").trim() + nanoid();
-    // console.log(blog_id);
-
-    if(id){
-
-        Blog.findOneAndUpdate({ blog_id },{ title,des,banner,content,tags,draft: draft ? draft : false })
-        .then(() => {
-            return res.status(200).json({ id: blog.blog_id })
-        })
-        .catch(err => {
-            return res.status(500).json({ error: err.message})
-        })
-
-    } else {
-        let blog = new Blog({
-            title,des,banner,content,tags,author:authorId,blog_id,draft: Boolean(draft)
-        })
+        let blog_id = id || title.replace(/[^a-zA-Z0-9]/g,' ').replace(/\s+/g,"-").trim() + nanoid();
+        // console.log(blog_id);
     
-        blog.save().then(blog => {
-            let incrementVal = draft ? 0 : 1;
+        if(id){
     
-            User.findOneAndUpdate({_id:authorId,}, { $inc : {"account_info.total_posts": incrementVal},$push:{"_blogs":blog_id}})
-            .then(user=> {
-                return res.status(200).json({id:blog.blog_id})
+            Blog.findOneAndUpdate({ blog_id },{ title,des,banner,content,tags,draft: draft ? draft : false })
+            .then(() => {
+                return res.status(200).json({ id: blog.blog_id })
             })
             .catch(err => {
-                return res.status(500).json({error:"Gagal mengupdate nomor total posts"})
+                return res.status(500).json({ error: err.message})
             })
-        })
-        .catch(err=> {
-            return res.status(500).json({error:err.message})
-        })
     
+        } else {
+            let blog = new Blog({
+                title,des,banner,content,tags,author:authorId,blog_id,draft: Boolean(draft)
+            })
+        
+            blog.save().then(blog => {
+                let incrementVal = draft ? 0 : 1;
+        
+                User.findOneAndUpdate({_id:authorId,}, { $inc : {"account_info.total_posts": incrementVal},$push:{"_blogs":blog_id}})
+                .then(user=> {
+                    return res.status(200).json({id:blog.blog_id})
+                })
+                .catch(err => {
+                    return res.status(500).json({error:"Gagal mengupdate nomor total posts"})
+                })
+            })
+            .catch(err=> {
+                return res.status(500).json({error:err.message})
+            })
+        
+        }
+    } else {
+        return res.status(500).json({ error:"kamu tidak memiliki izin untuk membuat blog" })
     }
+ 
 
 
     // return res.json({status:"done"})
@@ -559,7 +607,7 @@ server.post("/isliked-by-user",verifyJWT,(req,res) => {
 server.post("/add-comment", verifyJWT,(req, res) => {
 
     let user_id = req.user;
-    let { _id, comment, blog_author, replying_to } = req.body;
+    let { _id, comment, blog_author, replying_to, notification_id } = req.body;
 
     if(!comment.length) {
         return res.status(403).json({ error: 'Tuliskan sesuatu untuk meninggalkan komentar' });
@@ -593,6 +641,11 @@ server.post("/add-comment", verifyJWT,(req, res) => {
             notificationObj.replied_on_comment = replying_to;
             await Comment.findOneAndUpdate({ _id:replying_to },{ $push: { children: commentFile._id } })
             .then(replyingToCommentDoc => { notificationObj.notification_for = replyingToCommentDoc.commented_by })
+
+            if(notification_id){
+                Notification.findOneAndUpdate({ _id: notification_id },{ reply: commentFile._id })
+                .then(notification => console.log("notification updated"))
+            }
             
         }
 
@@ -667,7 +720,7 @@ const deleteComments = ( _id ) => {
         }
 
         Notification.findOneAndDelete({ comment: _id}).then(notification => console.log('notifikasi komentar dihapus'))
-        Notification.findOneAndDelete({ reply: _id }).then(notification => console.log('reply notifikasi dihapus'))
+        Notification.findOneAndUpdate({ reply: _id }, {$unset: { reply: 1 } }).then(notification => console.log('reply notifikasi dihapus'))
         Blog.findOneAndUpdate({_id:comment.blog_id},{ $pull: { comments: _id }, $inc:{"activity.total_comments":-1},"activity.total_parent_comments":comment.parent ? 0 : -1 })
         .then(blog => {
             if(comment.children.length) {
@@ -697,6 +750,168 @@ server.post("/delete-comment",verifyJWT,(req,res) => {
             return res.status(403).json({ error: "Kamu Tidak Bisa Menghapus Komentar ini"})
         }
     })
+})
+
+server.get("/new-notification",verifyJWT,(req,res) => {
+    let user_id = req.user;
+
+    Notification.exists({ notification_for: user_id,seen: false,user: { $ne:user_id } })
+    .then(result => {
+        if(result){
+            return res.status(200).json({ new_notification_available: true })
+        } else {
+            return res.status(200).json({ new_notification_available: false })
+        }
+    })
+    .catch(err => {
+        console.log(err.message);
+        return res.status(500).json({error:err.message})
+    })
+
+})
+
+server.post("/notifications",verifyJWT,(req,res) => {
+    let user_id = req.user;
+
+    let { page,filter, deletedDocCount, } = req.body;
+
+    let maxLimit = 10;
+
+    let findQuery = { notification_for: user_id, user:{ $ne: user_id } };
+
+    let skipDocs = ( page - 1 ) * maxLimit;
+
+    if(filter != 'all'){
+        findQuery.type = filter;
+
+    }
+    
+    if(deletedDocCount){
+        skipDocs -= deletedDocCount;
+    }
+
+    Notification.find(findQuery)
+    .skip(skipDocs)
+    .limit(maxLimit)
+    .populate("blog","title blog_id")
+    .populate("user","personal_info.fullname personal_info.username personal_info.profile_img")
+    .populate("comment","comment")
+    .populate("replied_on_comment","comment")
+    .populate("reply","comment")
+    .sort({ createdAt: -1 })
+    .select("createdAt type seen reply")
+    .then(notifications => {
+
+        Notification.updateMany(findQuery, { seen: true })
+        .skip(skipDocs)
+        .limit(maxLimit)
+        .then(() => console.log('notification seen'))
+
+        return res.status(200).json({ notifications });
+
+    })
+    .catch(err => {
+        console.log(err.message);
+        return res.status(500).json({error:err.message});
+    })
+
+})
+
+server.post("/all-notifications-count",verifyJWT,(req,res) => {
+
+    let user_id = req.user;
+
+    let { filter } = req.body;
+
+    let findQuery = { notification_for: user_id, user: { $ne: user_id} }
+
+    if(filter != 'all') {
+        findQuery.type = filter;
+
+    }
+
+    Notification.countDocuments(findQuery)
+    .then(count => {
+        return res.status(200).json({ totalDocs: count })
+    })
+    .catch( err => {
+        return res.status(500).json({ error: err.message })
+    })
+    
+})
+
+server.post("/user-written-blogs",verifyJWT,(req,res) => {
+
+    let user_id = req.user;
+
+    let { page,draft,query,deletedDocCount } = req.body;
+
+    let maxLimit = 5;
+    let skipDocs = (page -1) * maxLimit;
+
+    if(deletedDocCount) {
+        skipDocs -= deletedDocCount;
+    }
+
+    Blog.find({ author: user_id, draft, title: new RegExp(query,'i') })
+    .skip(skipDocs)
+    .limit(maxLimit)
+    .sort({ publishedAt: -1 })
+    .select(" title banner publishedAt blog_id activity des draft -_id ")
+    .then(blogs => {
+        return res.status(200).json({ blogs })
+    })
+    .catch(err => {
+        return res.status(500).json({ error:err.message });
+    })
+
+})
+
+server.post("/user-written-blogs-count",verifyJWT,(req,res) => {
+
+    let user_id = req.user;
+
+    let { draft,query } = req.body;
+
+    Blog.countDocuments({ author:user_id, draft, title: new RegExp(query,'i') })
+    .then(count => {
+        return res.status(200).json({ totalDocs:count })
+    })
+    .catch(err => {
+        console.log(err.message);
+        return res.status(500).json({ error:err.message });
+    })
+
+})
+
+server.post("/delete-blog", verifyJWT, (req,res) => {
+
+    let user_id = req.user;
+    let isAdmin = req.admin;
+    let { blog_id } = req.body;
+
+    if(isAdmin) {
+        Blog.findOneAndDelete({ blog_id })
+        .then(blog => {
+    
+            Notification.deleteMany({ blog:blog._id }).then(data => console.log('notification deleted'));
+    
+            Comment.deleteMany({ blog_id: blog._id }).then(data => console.log('comments deleted'));
+    
+            User.findOneAndUpdate({ _id:user_id }, { $pull:{ blog: blog._id }, $inc: { "account_info.total_posts": -1 } })
+            .then(user => console.log('Blog deleted'));
+    
+            return res.status(200).json({ status:'done'})
+        })
+        .catch(err => {
+            return res.status(500).json(({ error:err.message }))
+        })
+    } else {
+        return res.status(500).json({ error:"kamu tidak memiliki izin untuk menghapus blog" })
+    }
+
+   
+
 })
 
 server.listen(PORT,() => {
