@@ -4,7 +4,7 @@ import { UserContext } from "../App";
 
 const SideNav = () => {
     
-    let { userAuth: { access_token, new_notification_available } } = useContext(UserContext)
+    let { userAuth: { access_token, new_notification_available, isAdmin } } = useContext(UserContext)
 
     let page = location.pathname.split("/")[2];
 
@@ -73,10 +73,13 @@ const SideNav = () => {
                             Notification
                         </NavLink>
 
-                        <NavLink to="/editor" onClick={(e) => setPageState(e.target.innerText)} className="sidebar-link">
-                            <i className="fa fa-rr-file-edit"></i>
-                            Write
-                        </NavLink>
+                        {
+                            isAdmin ? 
+                            <NavLink to="/editor" onClick={(e) => setPageState(e.target.innerText)} className="sidebar-link">
+                                <i className="fa fa-rr-file-edit"></i>
+                                Write
+                            </NavLink> : ""
+                        }
 
                         <h1 className="text-xl text-dark-grey mt-20 mb-3">Pengaturan</h1>
                         <hr className="border-grey -ml-6 mb-8 mr-6" />
